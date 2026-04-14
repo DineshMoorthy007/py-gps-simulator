@@ -1,0 +1,337 @@
+/* ==================== RESET & BASE STYLES ==================== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #333;
+}
+
+body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+/* ==================== CONTAINER ==================== */
+
+.container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    background: #f8f9fa;
+}
+
+/* ==================== HEADER ==================== */
+
+.header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+}
+
+.header h1 {
+    font-size: 28px;
+    margin-bottom: 5px;
+}
+
+.header p {
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+/* ==================== MAIN CONTENT ==================== */
+
+.main-content {
+    display: flex;
+    flex: 1;
+    gap: 0;
+    overflow: hidden;
+}
+
+/* Canvas Container */
+.canvas-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    position: relative;
+    border-right: 2px solid #ddd;
+}
+
+#map-canvas {
+    display: block;
+    background: white;
+    cursor: crosshair;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
+    width: 100%;
+    height: 100%;
+}
+
+/* Control Panel */
+.control-panel {
+    width: 320px;
+    padding: 30px;
+    background: white;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.05);
+}
+
+.control-panel h2 {
+    font-size: 22px;
+    color: #667eea;
+    margin-bottom: 10px;
+}
+
+/* ==================== FORM STYLES ==================== */
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group label {
+    font-weight: 600;
+    color: #333;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-group select {
+    padding: 10px 12px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.form-group select:hover {
+    border-color: #667eea;
+}
+
+.form-group select:focus {
+    outline: none;
+    border-color: #667eea;
+    background: #f0f4ff;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* ==================== BUTTONS ==================== */
+
+.btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    width: 100%;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.btn-secondary {
+    background: #f0f0f0;
+    color: #333;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.btn-secondary:hover {
+    background: #e0e0e0;
+}
+
+/* ==================== RESULTS DISPLAY ==================== */
+
+.results-container {
+    background: #f0f4ff;
+    border: 2px solid #667eea;
+    border-radius: 6px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.results-container h3 {
+    color: #667eea;
+    font-size: 16px;
+    margin-bottom: 5px;
+}
+
+.result-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    padding: 8px 0;
+    border-bottom: 1px solid #ddd;
+}
+
+.result-item:last-of-type {
+    border-bottom: none;
+}
+
+.result-item .label {
+    font-weight: 600;
+    color: #555;
+}
+
+.result-item .value {
+    color: #667eea;
+    font-weight: 600;
+    word-break: break-all;
+    text-align: right;
+    flex: 1;
+    margin-left: 10px;
+}
+
+/* ==================== LOADING & ERROR ==================== */
+
+.loading,
+.error {
+    padding: 15px;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 14px;
+}
+
+.loading {
+    background: #e3f2fd;
+    color: #1976d2;
+    border: 2px solid #1976d2;
+}
+
+.loading p {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.error {
+    background: #ffebee;
+    color: #d32f2f;
+    border: 2px solid #d32f2f;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* ==================== FOOTER ==================== */
+
+.footer {
+    background: #333;
+    color: white;
+    text-align: center;
+    padding: 15px;
+    font-size: 12px;
+    margin-top: auto;
+}
+
+/* ==================== RESPONSIVE DESIGN ==================== */
+
+@media (max-width: 1024px) {
+    .main-content {
+        flex-direction: column;
+    }
+
+    .canvas-container {
+        border-right: none;
+        border-bottom: 2px solid #ddd;
+        min-height: 50%;
+        flex: 1;
+    }
+
+    .control-panel {
+        width: 100%;
+        border-right: none;
+        max-height: 50%;
+    }
+
+    .header h1 {
+        font-size: 24px;
+    }
+
+    .control-panel h2 {
+        font-size: 18px;
+    }
+}
+
+@media (max-width: 640px) {
+    .header h1 {
+        font-size: 20px;
+    }
+
+    .header p {
+        font-size: 12px;
+    }
+
+    .control-panel {
+        padding: 20px;
+    }
+
+    .btn {
+        font-size: 12px;
+        padding: 10px 16px;
+    }
+
+    .result-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+
+    .result-item .value {
+        text-align: left;
+        margin-left: 0;
+    }
+}
