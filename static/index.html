@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPS Navigation System</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>GPS Navigation System</h1>
+            <p>Find the shortest path between intersections</p>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Canvas for map visualization -->
+            <div class="canvas-container">
+                <canvas id="map-canvas"></canvas>
+            </div>
+
+            <!-- Control Panel -->
+            <div class="control-panel">
+                <h2>Route Finder</h2>
+                
+                <form id="route-form">
+                    <!-- Start Node Selection -->
+                    <div class="form-group">
+                        <label for="start-node">Start Point:</label>
+                        <select id="start-node" required>
+                            <option value="" disabled selected>Select starting node...</option>
+                        </select>
+                    </div>
+
+                    <!-- End Node Selection -->
+                    <div class="form-group">
+                        <label for="end-node">Destination:</label>
+                        <select id="end-node" required>
+                            <option value="" disabled selected>Select destination node...</option>
+                        </select>
+                    </div>
+
+                    <!-- Find Route Button -->
+                    <button type="submit" class="btn btn-primary">Find Route</button>
+                </form>
+
+                <!-- Results Display -->
+                <div id="results" class="results-container hidden">
+                    <h3>Route Details</h3>
+                    <div class="result-item">
+                        <span class="label">Distance:</span>
+                        <span id="distance-value" class="value">-</span> units
+                    </div>
+                    <div class="result-item">
+                        <span class="label">Path:</span>
+                        <span id="path-value" class="value">-</span>
+                    </div>
+                    <button type="button" class="btn btn-secondary" onclick="clearRoute()">Clear Route</button>
+                </div>
+
+                <!-- Loading Indicator -->
+                <div id="loading" class="loading hidden">
+                    <p>Calculating route...</p>
+                </div>
+
+                <!-- Error Display -->
+                <div id="error" class="error hidden">
+                    <p id="error-message"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2026 GPS Navigation System | Canvas-based Route Visualization</p>
+        </footer>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
