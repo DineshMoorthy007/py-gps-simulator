@@ -3,30 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f4f7fb">
     <title>GPS Navigation System</title>
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" sizes="any">
+    <link rel="shortcut icon" href="/favicon.ico">
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
         <header class="header">
-            <h1>GPS Navigation System</h1>
-            <p>Find the shortest path between intersections</p>
+            <div>
+                <p class="eyebrow">Navigation Demo</p>
+                <h1>GPS Navigation System</h1>
+                <p>Explore intersections, compute routes, and visualize the result on a canvas map.</p>
+            </div>
         </header>
 
-        <!-- Main Content -->
         <div class="main-content">
-            <!-- Canvas for map visualization -->
             <div class="canvas-container">
                 <canvas id="map-canvas"></canvas>
             </div>
 
-            <!-- Control Panel -->
             <div class="control-panel">
                 <h2>Route Finder</h2>
-                
+                <p class="panel-copy">Choose two nodes to calculate the fastest route through the road network.</p>
+
                 <form id="route-form">
-                    <!-- Start Node Selection -->
                     <div class="form-group">
                         <label for="start-node">Start Point:</label>
                         <select id="start-node" required>
@@ -34,7 +36,6 @@
                         </select>
                     </div>
 
-                    <!-- End Node Selection -->
                     <div class="form-group">
                         <label for="end-node">Destination:</label>
                         <select id="end-node" required>
@@ -42,11 +43,9 @@
                         </select>
                     </div>
 
-                    <!-- Find Route Button -->
                     <button type="submit" class="btn btn-primary">Find Route</button>
                 </form>
 
-                <!-- Results Display -->
                 <div id="results" class="results-container hidden">
                     <h3>Route Details</h3>
                     <div class="result-item">
@@ -60,21 +59,18 @@
                     <button type="button" class="btn btn-secondary" onclick="clearRoute()">Clear Route</button>
                 </div>
 
-                <!-- Loading Indicator -->
                 <div id="loading" class="loading hidden">
                     <p>Calculating route...</p>
                 </div>
 
-                <!-- Error Display -->
                 <div id="error" class="error hidden">
                     <p id="error-message"></p>
                 </div>
             </div>
         </div>
 
-        <!-- Footer -->
         <footer class="footer">
-            <p>&copy; 2026 GPS Navigation System | Canvas-based Route Visualization</p>
+            <p>Canvas-based route visualization powered by Flask and Dijkstra's algorithm.</p>
         </footer>
     </div>
 

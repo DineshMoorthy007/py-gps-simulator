@@ -1,253 +1,129 @@
 # GPS Navigation System
 
-A web-based shortest-path navigation system featuring Dijkstra's algorithm visualization on an HTML5 canvas.
+[![Python](https://img.shields.io/badge/Python-3.9%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![Flask](https://img.shields.io/badge/Backend-Flask-000000?style=flat-square&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
+[![Frontend](https://img.shields.io/badge/Frontend-Vanilla%20JS%20%2B%20Canvas-2D6CDF?style=flat-square)]()
+[![License](https://img.shields.io/badge/License-Educational-lightgrey?style=flat-square)]()
 
-## Project Overview
+Web-based navigation demo that renders a weighted road network on an HTML5 canvas and computes the shortest route with Dijkstra's algorithm.
 
-This project demonstrates a full-stack implementation of a GPS navigation system with:
-- **Backend**: Flask REST API with Dijkstra's shortest-path algorithm
-- **Frontend**: Interactive HTML5 canvas visualization with route highlighting
-- **Graph Generation**: Force-directed layout with k-nearest neighbors connectivity
+## Overview
 
-## Tech Stack
+The application generates a connected graph of intersections, exposes it through a Flask API, and lets the browser draw the map and highlight the shortest route between any two nodes.
 
-- **Backend**: Python 3, Flask
-- **Frontend**: HTML5, CSS3, Vanilla JavaScript (Canvas API)
-- **Algorithm**: Dijkstra's shortest path (weighted graph)
-- **Graph Model**: Force-directed node placement with collision avoidance
+## Stack
+
+- Python 3.9+
+- Flask
+- Vanilla HTML, CSS, and JavaScript
+- HTML5 Canvas
 
 ## Project Structure
 
-```
+```text
 py-gps-simulator/
-├── app.py              # Flask backend server
-├── algorithm.py        # Dijkstra's algorithm implementation
-├── graph.py            # Force-directed graph generation
-├── requirements.txt    # Python dependencies
-├── static/
-│   ├── index.html      # Frontend HTML
-│   ├── style.css       # Frontend styling
-│   └── script.js       # Frontend interactivity & canvas drawing
-└── README.md           # This file
+├── app.py
+├── algorithm.py
+├── graph.py
+├── requirements.txt
+├── README.md
+└── static/
+    ├── favicon.svg
+    ├── index.html
+    ├── script.js
+    └── style.css
 ```
 
-## Installation & Setup
+## Setup
 
-### Prerequisites
+### 1. Create an environment
 
-- Python 3.7+
-- pip (Python package manager)
+```bash
+python -m venv venv
+```
 
-### Steps
+### 2. Activate it
 
-1. **Clone the repository** (or extract the project):
-   ```bash
-   cd py-gps-simulator
-   ```
+```bash
+venv\Scripts\activate
+```
 
-2. **Create a virtual environment** (recommended):
-   ```bash
-   # On Windows
-   python -m venv venv
-   
-   # On macOS/Linux
-   python3 -m venv venv
-   ```
+### 3. Install dependencies
 
-3. **Activate the virtual environment**:
-   ```bash
-   # On Windows
-   venv\Scripts\activate
-   
-   # On macOS/Linux
-   source venv/bin/activate
-   ```
+```bash
+pip install -r requirements.txt
+```
 
-4. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-## Running the Application
-
-### Start the Flask Server
+## Run
 
 ```bash
 python app.py
 ```
 
-You should see output like:
-```
- * Running on http://127.0.0.1:5000
-```
+Open `http://127.0.0.1:5000` in your browser.
 
-### Access the Application
-
-Open your web browser and navigate to:
-```
-http://localhost:5000
-```
-
-## How to Use
-
-1. **View the Map**: The canvas displays all nodes (intersections) as circles connected by lines (roads).
-
-2. **Select Start Point**: Choose a starting node from the "Start Point" dropdown.
-
-3. **Select Destination**: Choose a destination node from the "Destination" dropdown.
-
-4. **Find Route**: Click the "Find Route" button to calculate the shortest path.
-
-5. **View Results**:
-   - The shortest path is highlighted in red with thicker lines
-   - Start and end nodes are highlighted in purple
-   - Distance in units is displayed in the results panel
-   - Complete path sequence is shown (e.g., "A → B → C")
-
-6. **Clear Route**: Click "Clear Route" to reset and find a new path.
-
-## API Endpoints
+## API
 
 ### GET /api/map
 
-Retrieves the complete graph data for canvas visualization.
+Returns the graph used for drawing the map.
 
-**Response**:
+Example response:
+
 ```json
 {
   "success": true,
   "data": {
     "nodes": {
-      "A": {"x": 100, "y": 150},
-      "B": {"x": 250, "y": 300},
-      ...
+      "A": { "x": 180, "y": 140 }
     },
-    "edges": [
-      ["A", "B", 150.5],
-      ["B", "C", 200.3],
-      ...
-    ]
+    "edges": [["A", "B", 152]]
   }
 }
 ```
 
 ### POST /api/route
 
-Calculates the shortest path between two nodes.
+Accepts:
 
-**Request**:
 ```json
 {
   "start": "A",
-  "end": "D"
+  "end": "B"
 }
 ```
 
-**Response**:
+Returns:
+
 ```json
 {
   "success": true,
   "data": {
-    "path": ["A", "B", "C", "D"],
-    "distance": 450.8
+    "path": ["A", "C", "B"],
+    "distance": 284
   }
 }
 ```
 
-**Error Response** (if no path exists or node not found):
-```json
-{
-  "success": false,
-  "error": "No path exists from 'A' to 'Z'"
-}
-```
+## Implementation Notes
 
-## Algorithm Details
+- `graph.py` builds a reproducible force-directed graph with collision-aware node placement.
+- `algorithm.py` implements Dijkstra's algorithm and returns the route as a node list plus total distance.
+- `app.py` exposes the map and route endpoints and serves the favicon.
+- `static/script.js` renders the map, supports scrolling for large layouts, and highlights the selected path.
 
-### Dijkstra's Algorithm
+## Behavior
 
-The system uses **Dijkstra's shortest-path algorithm** to find the optimal route between any two nodes:
-
-- **Time Complexity**: O((V + E) log V) using a min-heap priority queue
-- **Space Complexity**: O(V) for distance and visited tracking
-- **Guarantee**: Finds the globally optimal (shortest) path in weighted graphs with non-negative weights
-
-**Implementation**: [algorithm.py](algorithm.py)
-
-### Force-Directed Graph Generation
-
-Nodes are positioned intelligently to avoid overlapping:
-
-1. **Random Placement**: Nodes are placed randomly on the canvas
-2. **Collision Detection**: If a new node is within 50px of an existing node, it's repositioned
-3. **K-Nearest Neighbors**: Each node connects to its 3 closest neighbors
-4. **Distance Weighting**: Edge weights are calculated as Euclidean distance between nodes
-
-**Implementation**: [graph.py](graph.py)
-
-## Features
-
-✅ Full-stack application with clear separation of concerns  
-✅ Real-time shortest-path calculation  
-✅ Interactive canvas visualization (20+ nodes)  
-✅ Responsive UI that adapts to different screen sizes  
-✅ Error handling for invalid inputs and edge cases  
-✅ Clean, modular code with comprehensive comments  
-✅ RESTful API design  
-
-## Example Workflow
-
-1. App starts → Force-directed graph with 20 nodes is generated
-2. Frontend fetches graph data via GET /api/map
-3. Canvas draws nodes and edges
-4. Dropdowns populate with available node IDs
-5. User selects nodes and clicks "Find Route"
-6. Backend calculates shortest path using Dijkstra's algorithm
-7. Frontend receives result and highlights the path in red
-8. Distance and path sequence are displayed
+- The canvas area is scrollable so larger graphs remain usable on smaller screens.
+- The control panel stays readable with a light SaaS-style layout.
+- The favicon route is handled explicitly to avoid browser 404 noise.
 
 ## Troubleshooting
 
-### Port Already in Use
-
-If port 5000 is already in use, modify `app.py`:
-```python
-if __name__ == "__main__":
-    app.run(debug=True, host="127.0.0.1", port=5001)  # Change to different port
-```
-
-### Dependencies Not Installing
-
-Ensure you're using an updated version of pip:
-```bash
-pip install --upgrade pip
-```
-
-### Canvas Not Rendering
-
-Clear your browser cache (Ctrl+Shift+Delete) and refresh the page.
-
-## Future Enhancements
-
-- Add multiple route options (not just shortest)
-- Implement A* algorithm for faster pathfinding
-- Add turn restrictions and one-way streets
-- Real-time traffic simulation with dynamic weights
-- Database persistence for graph data
-- User authentication and saved route history
-- Mobile app companion
+- If the server does not start, confirm Flask is installed in the active environment.
+- If the canvas looks clipped, refresh the page after the backend has restarted so the graph is re-fetched.
+- If ports conflict, change the port in `app.py`.
 
 ## License
 
-This project is open-source and available for educational purposes.
-
-## Support
-
-For issues or questions, please check:
-- The API responses in browser console (F12)
-- Python console output for backend errors
-- Flask debug logs for server issues
-
----
-
-**Built with ❤️ as a Full-Stack GPS Navigation System**
+This project is provided for educational use.

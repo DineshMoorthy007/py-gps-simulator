@@ -1,13 +1,8 @@
-/**
- * GPS Navigation System - Frontend Script
- * Handles map visualization, route finding, and canvas drawing
- */
-
-// Global state
 let graphData = null;
 let canvas = null;
 let ctx = null;
-let highlightedPath = null;
+let highlightedRoute = null;
+let canvasOffset = { x: 0, y: 0, scale: 1 };
 
 const NODE_RADIUS = 8;
 const NODE_COLOR = "#667eea";
@@ -16,90 +11,69 @@ const EDGE_COLOR = "#cccccc";
 const EDGE_WIDTH = 2;
 const PATH_COLOR = "#ff6b6b";
 const PATH_WIDTH = 4;
+const CANVAS_PADDING = 72;
+const MAX_CANVAS_WIDTH = 920;
+const MAX_CANVAS_HEIGHT = 620;
 
-// ==================== INITIALIZATION ====================
+// Application bootstrap
 
-/**
- * Initialize the map and set up event listeners
- */
 async function initializeMap() {
     try {
-        // Setup canvas
         canvas = document.getElementById("map-canvas");
         if (!canvas) {
             throw new Error("Canvas element not found");
         }
+
         ctx = canvas.getContext("2d");
 
-        // Set canvas size to container size
-        resizeCanvas();
-        window.addEventListener("resize", resizeCanvas);
-
-        // Fetch map data from backend
         const response = await fetch("/api/map");
-        if (!response.ok) {
-            throw new Error("Failed to fetch map data from backend");
+        const payload = await response.json();
+
+        if (!response.ok || !payload.success) {
+            throw new Error(payload.error || "Failed to load the map");
         }
 
-        const jsonData = await response.json();
-        if (!jsonData.success) {
-            throw new Error(jsonData.error || "Unknown error fetching map");
-        }
-
-        graphData = jsonData.data;
-
-        // Draw initial map
-        drawMap(graphData);
-
-        // Populate dropdowns with node IDs
+        graphData = payload.data;
         populateNodeSelects();
+        bindEventHandlers();
+        renderScene();
 
-        // Setup form submission
-        document.getElementById("route-form").addEventListener("submit", handleRouteSubmit);
-
+        window.addEventListener("resize", renderScene);
     } catch (error) {
-        console.error("Initialization error:", error);
-        showError("Failed to initialize map: " + error.message);
+        showError(`Failed to initialize the map: ${error.message}`);
     }
 }
 
-/**
- * Resize canvas to fit its container
- */
-function resizeCanvas() {
-    if (!canvas) return;
+// Event wiring
 
-    const container = canvas.parentElement;
-    canvas.width = container.clientWidth;
-    canvas.height = container.clientHeight;
-
-    // Redraw on resize
-    if (graphData) {
-        drawMap(graphData);
-        if (highlightedPath) {
-            highlightRoute(highlightedPath);
-        }
-    }
+function bindEventHandlers() {
+    document.getElementById("route-form").addEventListener("submit", handleRouteSubmit);
 }
 
-// ==================== FETCH & POPULATE ====================
+function clearRoute() {
+    highlightedRoute = null;
+    document.getElementById("results").classList.add("hidden");
+    document.getElementById("start-node").value = "";
+    document.getElementById("end-node").value = "";
+    hideError();
+    renderScene();
+}
 
-/**
- * Populate start and end node dropdowns with available nodes
- */
+// Data preparation
+
 function populateNodeSelects() {
-    if (!graphData || !graphData.nodes) return;
+    if (!graphData || !graphData.nodes) {
+        return;
+    }
 
     const nodeIds = Object.keys(graphData.nodes).sort();
     const startSelect = document.getElementById("start-node");
     const endSelect = document.getElementById("end-node");
 
-    // Clear existing options (except the first placeholder)
-    startSelect.querySelectorAll("option:not(:first-child)").forEach(opt => opt.remove());
-    endSelect.querySelectorAll("option:not(:first-child)").forEach(opt => opt.remove());
+    startSelect.querySelectorAll("option:not(:first-child)").forEach((option) => option.remove());
+    endSelect.querySelectorAll("option:not(:first-child)").forEach((option) => option.remove());
 
-    // Add node options
-    nodeIds.forEach(nodeId => {
+    nodeIds.forEach((nodeId) => {
         const startOption = document.createElement("option");
         startOption.value = nodeId;
         startOption.textContent = `Node ${nodeId}`;
@@ -112,9 +86,60 @@ function populateNodeSelects() {
     });
 }
 
-/**
- * Handle route form submission
- */
+function getGraphBounds(nodes) {
+    const values = Object.values(nodes);
+    return values.reduce((bounds, node) => ({
+        minX: Math.min(bounds.minX, node.x),
+        maxX: Math.max(bounds.maxX, node.x),
+        minY: Math.min(bounds.minY, node.y),
+        maxY: Math.max(bounds.maxY, node.y),
+    }), {
+        minX: Number.POSITIVE_INFINITY,
+        maxX: Number.NEGATIVE_INFINITY,
+        minY: Number.POSITIVE_INFINITY,
+        maxY: Number.NEGATIVE_INFINITY,
+    });
+}
+
+function layoutCanvas() {
+    if (!canvas || !graphData || !graphData.nodes) {
+        return;
+    }
+
+    const container = canvas.parentElement;
+    const bounds = getGraphBounds(graphData.nodes);
+    const availableWidth = Math.min(container.clientWidth - 8, MAX_CANVAS_WIDTH);
+    const availableHeight = Math.min(MAX_CANVAS_HEIGHT, Math.max(420, Math.floor(availableWidth * 0.68)));
+    const graphWidth = Math.max(bounds.maxX - bounds.minX, 1);
+    const graphHeight = Math.max(bounds.maxY - bounds.minY, 1);
+    const scale = Math.min(
+        (availableWidth - CANVAS_PADDING * 2) / graphWidth,
+        (availableHeight - CANVAS_PADDING * 2) / graphHeight,
+        1
+    );
+    const width = Math.max(availableWidth, 640);
+    const height = Math.max(availableHeight, 420);
+
+    canvas.width = width;
+    canvas.height = height;
+    canvas.style.width = "100%";
+    canvas.style.height = `${height}px`;
+    canvasOffset = {
+        x: CANVAS_PADDING - bounds.minX * scale,
+        y: CANVAS_PADDING - bounds.minY * scale,
+        scale,
+    };
+}
+
+function translatePoint(node) {
+    return {
+        x: node.x * canvasOffset.scale + canvasOffset.x,
+        y: node.y * canvasOffset.scale + canvasOffset.y,
+    };
+}
+
+// Route lookup
+
 async function handleRouteSubmit(event) {
     event.preventDefault();
 
@@ -135,7 +160,6 @@ async function handleRouteSubmit(event) {
         showLoading(true);
         hideError();
 
-        // Call backend API
         const response = await fetch("/api/route", {
             method: "POST",
             headers: {
@@ -144,201 +168,183 @@ async function handleRouteSubmit(event) {
             body: JSON.stringify({ start, end }),
         });
 
-        const result = await response.json();
+        const payload = await response.json();
 
-        if (!result.success) {
-            throw new Error(result.error || "Failed to calculate route");
+        if (!response.ok || !payload.success) {
+            throw new Error(payload.error || "Failed to calculate route");
         }
 
-        // Display results and highlight path
-        const routeData = result.data;
-        highlightedPath = routeData;
-        displayRouteResults(routeData);
-        highlightRoute(routeData);
-
+        highlightedRoute = payload.data;
+        displayRouteResults(payload.data);
+        renderScene();
     } catch (error) {
-        console.error("Route calculation error:", error);
         showError(error.message);
     } finally {
         showLoading(false);
     }
 }
 
-/**
- * Display route results in the UI
- */
-function displayRouteResults(routeData) {
-    const resultsContainer = document.getElementById("results");
-    const distanceValue = document.getElementById("distance-value");
-    const pathValue = document.getElementById("path-value");
+// Rendering
 
-    distanceValue.textContent = routeData.distance.toFixed(2);
-    pathValue.textContent = routeData.path.join(" → ");
+function renderScene() {
+    if (!graphData || !canvas || !ctx) {
+        return;
+    }
 
-    resultsContainer.classList.remove("hidden");
-}
+    layoutCanvas();
+    drawMap(graphData);
 
-/**
- * Clear the highlighted route
- */
-function clearRoute() {
-    highlightedPath = null;
-    document.getElementById("results").classList.add("hidden");
-    document.getElementById("start-node").value = "";
-    document.getElementById("end-node").value = "";
-    if (graphData) {
-        drawMap(graphData);
+    if (highlightedRoute) {
+        drawHighlightedRoute(highlightedRoute);
     }
 }
 
-// ==================== CANVAS DRAWING ====================
-
-/**
- * Draw the complete map (nodes and edges)
- */
 function drawMap(graph) {
-    if (!ctx || !canvas) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Clear canvas
-    ctx.fillStyle = "white";
+    const background = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    background.addColorStop(0, "#ffffff");
+    background.addColorStop(1, "#f8fbff");
+    ctx.fillStyle = background;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    if (!graph.nodes || !graph.edges) return;
-
-    // Draw edges first (so they appear behind nodes)
+    drawGrid();
     drawEdges(graph.edges, graph.nodes);
-
-    // Draw nodes on top
     drawNodes(graph.nodes);
 }
 
-/**
- * Draw all edges (roads) on the canvas
- */
+function drawGrid() {
+    const step = 80;
+    ctx.save();
+    ctx.strokeStyle = "rgba(148, 163, 184, 0.12)";
+    ctx.lineWidth = 1;
+
+    for (let x = 0; x <= canvas.width; x += step) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+    }
+
+    for (let y = 0; y <= canvas.height; y += step) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+    }
+
+    ctx.restore();
+}
+
 function drawEdges(edges, nodes) {
+    ctx.save();
     ctx.strokeStyle = EDGE_COLOR;
     ctx.lineWidth = EDGE_WIDTH;
     ctx.lineCap = "round";
 
-    edges.forEach(([fromNode, toNode, distance]) => {
-        const from = nodes[fromNode];
-        const to = nodes[toNode];
+    edges.forEach(([fromNode, toNode]) => {
+        const from = translatePoint(nodes[fromNode]);
+        const to = translatePoint(nodes[toNode]);
 
-        if (from && to) {
-            ctx.beginPath();
-            ctx.moveTo(from.x, from.y);
-            ctx.lineTo(to.x, to.y);
-            ctx.stroke();
+        if (!from || !to) {
+            return;
         }
+
+        ctx.beginPath();
+        ctx.moveTo(from.x, from.y);
+        ctx.lineTo(to.x, to.y);
+        ctx.stroke();
     });
+
+    ctx.restore();
 }
 
-/**
- * Draw all nodes (intersections) on the canvas
- */
 function drawNodes(nodes) {
-    ctx.fillStyle = NODE_COLOR;
+    Object.keys(nodes).forEach((nodeId) => {
+        const node = translatePoint(nodes[nodeId]);
 
-    Object.keys(nodes).forEach(nodeId => {
-        const node = nodes[nodeId];
+        ctx.save();
+        ctx.shadowColor = "rgba(45, 108, 223, 0.18)";
+        ctx.shadowBlur = 14;
+        ctx.fillStyle = NODE_COLOR;
         ctx.beginPath();
-        ctx.arc(node.x, node.y, NODE_RADIUS, 0, 2 * Math.PI);
+        ctx.arc(node.x, node.y, NODE_RADIUS, 0, Math.PI * 2);
         ctx.fill();
 
-        // Draw label
-        ctx.fillStyle = "white";
-        ctx.font = "bold 10px Arial";
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "700 10px Segoe UI, Arial, sans-serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText(nodeId, node.x, node.y);
-
-        // Reset color for next iteration
-        ctx.fillStyle = NODE_COLOR;
+        ctx.fillText(nodeId, node.x, node.y + 0.5);
+        ctx.restore();
     });
 }
 
-/**
- * Highlight the shortest path on the canvas
- */
-function highlightRoute(routeData) {
-    if (!ctx || !graphData || !routeData.path) return;
-
-    // Redraw base map
-    drawMap(graphData);
-
-    // Draw path edges with highlight color and thicker width
+function drawHighlightedRoute(routeData) {
+    ctx.save();
     ctx.strokeStyle = PATH_COLOR;
     ctx.lineWidth = PATH_WIDTH;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
 
-    const path = routeData.path;
-    for (let i = 0; i < path.length - 1; i++) {
-        const fromNode = graphData.nodes[path[i]];
-        const toNode = graphData.nodes[path[i + 1]];
+    for (let index = 0; index < routeData.path.length - 1; index += 1) {
+        const fromNode = translatePoint(graphData.nodes[routeData.path[index]]);
+        const toNode = translatePoint(graphData.nodes[routeData.path[index + 1]]);
 
-        if (fromNode && toNode) {
-            ctx.beginPath();
-            ctx.moveTo(fromNode.x, fromNode.y);
-            ctx.lineTo(toNode.x, toNode.y);
-            ctx.stroke();
-        }
+        ctx.beginPath();
+        ctx.moveTo(fromNode.x, fromNode.y);
+        ctx.lineTo(toNode.x, toNode.y);
+        ctx.stroke();
     }
 
-    // Highlight path nodes with different color
-    ctx.fillStyle = NODE_HIGHLIGHT_COLOR;
-    path.forEach(nodeId => {
-        const node = graphData.nodes[nodeId];
-        if (node) {
-            ctx.beginPath();
-            ctx.arc(node.x, node.y, NODE_RADIUS, 0, 2 * Math.PI);
-            ctx.fill();
+    routeData.path.forEach((nodeId) => {
+        const node = translatePoint(graphData.nodes[nodeId]);
 
-            // Redraw label
-            ctx.fillStyle = "white";
-            ctx.font = "bold 10px Arial";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillText(nodeId, node.x, node.y);
+        ctx.shadowColor = "rgba(255, 107, 107, 0.24)";
+        ctx.shadowBlur = 16;
+        ctx.fillStyle = NODE_HIGHLIGHT_COLOR;
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, NODE_RADIUS + 2, 0, Math.PI * 2);
+        ctx.fill();
 
-            ctx.fillStyle = NODE_HIGHLIGHT_COLOR;
-        }
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "700 10px Segoe UI, Arial, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(nodeId, node.x, node.y + 0.5);
     });
+
+    ctx.restore();
 }
 
-// ==================== UI UTILITIES ====================
+// UI feedback
 
-/**
- * Show loading indicator
- */
+function displayRouteResults(routeData) {
+    const resultsContainer = document.getElementById("results");
+    const distanceValue = document.getElementById("distance-value");
+    const pathValue = document.getElementById("path-value");
+
+    distanceValue.textContent = Number(routeData.distance).toLocaleString();
+    pathValue.textContent = routeData.path.join(" → ");
+
+    resultsContainer.classList.remove("hidden");
+}
+
 function showLoading(visible) {
-    const loading = document.getElementById("loading");
-    if (visible) {
-        loading.classList.remove("hidden");
-    } else {
-        loading.classList.add("hidden");
-    }
+    document.getElementById("loading").classList.toggle("hidden", !visible);
 }
 
-/**
- * Show error message
- */
 function showError(message) {
-    const errorDiv = document.getElementById("error");
-    const errorMessage = document.getElementById("error-message");
-    errorMessage.textContent = message;
-    errorDiv.classList.remove("hidden");
+    document.getElementById("error-message").textContent = message;
+    document.getElementById("error").classList.remove("hidden");
 }
 
-/**
- * Hide error message
- */
 function hideError() {
-    const errorDiv = document.getElementById("error");
-    errorDiv.classList.add("hidden");
+    document.getElementById("error").classList.add("hidden");
 }
 
-// ==================== STARTUP ====================
+// Startup
 
-// Initialize map when page loads
 document.addEventListener("DOMContentLoaded", initializeMap);
