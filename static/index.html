@@ -24,47 +24,54 @@
                 <canvas id="map-canvas"></canvas>
             </div>
 
-            <div class="control-panel">
-                <h2>Route Finder</h2>
-                <p class="panel-copy">Choose two nodes to calculate the fastest route through the road network.</p>
+            <div class="side-panels">
+                <div class="control-panel">
+                    <h2>Route Finder</h2>
+                    <p class="panel-copy">Choose two nodes to calculate the fastest route through the road network.</p>
 
-                <form id="route-form">
-                    <div class="form-group">
-                        <label for="start-node">Start Point:</label>
-                        <select id="start-node" required>
-                            <option value="" disabled selected>Select starting node...</option>
-                        </select>
+                    <form id="route-form">
+                        <div class="form-group">
+                            <label for="start-node">Start Point:</label>
+                            <select id="start-node" required>
+                                <option value="" disabled selected>Select starting node...</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="end-node">Destination:</label>
+                            <select id="end-node" required>
+                                <option value="" disabled selected>Select destination node...</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Find Route</button>
+                    </form>
+
+                    <div id="loading" class="loading hidden">
+                        <p>Calculating route...</p>
                     </div>
 
-                    <div class="form-group">
-                        <label for="end-node">Destination:</label>
-                        <select id="end-node" required>
-                            <option value="" disabled selected>Select destination node...</option>
-                        </select>
+                    <div id="error" class="error hidden">
+                        <p id="error-message"></p>
+                    </div>
+                </div>
+
+                <div class="details-panel">
+                    <h2>Route Details</h2>
+                    <p id="route-placeholder" class="panel-copy">Pick a start and destination node to see distance and path here.</p>
+
+                    <div id="results" class="results-container">
+                        <div class="result-item">
+                            <span class="label">Distance:</span>
+                            <span id="distance-value" class="value">-</span> units
+                        </div>
+                        <div class="result-item">
+                            <span class="label">Path:</span>
+                            <span id="path-value" class="value">-</span>
+                        </div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary">Find Route</button>
-                </form>
-
-                <div id="results" class="results-container hidden">
-                    <h3>Route Details</h3>
-                    <div class="result-item">
-                        <span class="label">Distance:</span>
-                        <span id="distance-value" class="value">-</span> units
-                    </div>
-                    <div class="result-item">
-                        <span class="label">Path:</span>
-                        <span id="path-value" class="value">-</span>
-                    </div>
                     <button type="button" class="btn btn-secondary" onclick="clearRoute()">Clear Route</button>
-                </div>
-
-                <div id="loading" class="loading hidden">
-                    <p>Calculating route...</p>
-                </div>
-
-                <div id="error" class="error hidden">
-                    <p id="error-message"></p>
                 </div>
             </div>
         </div>

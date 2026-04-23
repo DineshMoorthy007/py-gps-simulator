@@ -112,6 +112,51 @@ Returns:
 - `app.py` exposes the map and route endpoints and serves the favicon.
 - `static/script.js` renders the map, supports scrolling for large layouts, and highlights the selected path.
 
+## Dijkstra's Algorithm In This Project
+
+### Where It Is Used
+
+- Dijkstra is used in the backend route API (`POST /api/route`) to compute the shortest path between two selected nodes.
+- The call flow is:
+  1. Frontend sends `{ start, end }` from `static/script.js`.
+  2. `app.py` validates input and calls `get_shortest_path(...)`.
+  3. `algorithm.py` runs Dijkstra and returns `{ path, distance }`.
+  4. Frontend receives the result, shows route details, and highlights the path on the canvas.
+
+### How We Implemented It
+
+The Dijkstra implementation lives in `algorithm.py` and is split into two clear steps:
+
+1. Build adjacency list
+
+- `_build_adjacency_list(graph)` converts the edge list into a neighbor map.
+- Each edge is treated as bidirectional (undirected graph), so both directions are added.
+
+2. Run shortest-path search
+
+- `get_shortest_path(graph, start, end)` validates node existence.
+- It initializes:
+  - `distances`: tentative shortest distance from `start` to every node (starts with infinity).
+  - `previous_nodes`: parent pointer used later to reconstruct the path.
+  - `queue`: a min-heap (`heapq`) storing `(distance, node)`.
+  - `visited`: processed nodes set.
+- The algorithm repeatedly pops the closest node from the heap, relaxes neighboring edges, and updates shorter distances.
+- Once the destination is reached, it reconstructs the path by walking backward through `previous_nodes`, then reverses it.
+- Final output is returned as:
+
+```json
+{
+  "path": ["A", "C", "B"],
+  "distance": 284
+}
+```
+
+### Why Dijkstra Fits Here
+
+- Edge weights are non-negative (Euclidean distances rounded to integers in `graph.py`).
+- The graph is sparse and moderate in size, so a heap-based Dijkstra is efficient and easy to maintain.
+- This keeps route computation deterministic and fast for interactive canvas rendering.
+
 ## Behavior
 
 - The canvas area is scrollable so larger graphs remain usable on smaller screens.

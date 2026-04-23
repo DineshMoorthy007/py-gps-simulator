@@ -11,9 +11,11 @@ const EDGE_COLOR = "#cccccc";
 const EDGE_WIDTH = 2;
 const PATH_COLOR = "#ff6b6b";
 const PATH_WIDTH = 4;
-const CANVAS_PADDING = 72;
-const MAX_CANVAS_WIDTH = 920;
-const MAX_CANVAS_HEIGHT = 620;
+const CANVAS_PADDING = 60;
+const MAX_CANVAS_WIDTH = 860;
+const MAX_CANVAS_HEIGHT = 540;
+const MIN_CANVAS_HEIGHT = 320;
+const MAX_GRAPH_SCALE = 1.25;
 
 // Application bootstrap
 
@@ -52,9 +54,10 @@ function bindEventHandlers() {
 
 function clearRoute() {
     highlightedRoute = null;
-    document.getElementById("results").classList.add("hidden");
     document.getElementById("start-node").value = "";
     document.getElementById("end-node").value = "";
+    setRoutePlaceholder("Pick a start and destination node to see distance and path here.");
+    displayRouteResults(null);
     hideError();
     renderScene();
 }
@@ -107,26 +110,35 @@ function layoutCanvas() {
     }
 
     const container = canvas.parentElement;
+    const mainContent = document.querySelector(".main-content");
     const bounds = getGraphBounds(graphData.nodes);
     const availableWidth = Math.min(container.clientWidth - 8, MAX_CANVAS_WIDTH);
-    const availableHeight = Math.min(MAX_CANVAS_HEIGHT, Math.max(420, Math.floor(availableWidth * 0.68)));
+    const viewportHeight = Math.floor(window.visualViewport?.height || window.innerHeight);
+    const topOffset = Math.floor((mainContent || container).getBoundingClientRect().top);
+    const viewportAvailableHeight = Math.max(MIN_CANVAS_HEIGHT, viewportHeight - topOffset - 28);
+    const widthDrivenHeight = Math.max(MIN_CANVAS_HEIGHT, Math.floor(availableWidth * 0.62));
+    const availableHeight = Math.min(MAX_CANVAS_HEIGHT, viewportAvailableHeight, widthDrivenHeight);
     const graphWidth = Math.max(bounds.maxX - bounds.minX, 1);
     const graphHeight = Math.max(bounds.maxY - bounds.minY, 1);
     const scale = Math.min(
         (availableWidth - CANVAS_PADDING * 2) / graphWidth,
         (availableHeight - CANVAS_PADDING * 2) / graphHeight,
-        1
+        MAX_GRAPH_SCALE
     );
     const width = Math.max(availableWidth, 640);
-    const height = Math.max(availableHeight, 420);
+    const height = Math.max(availableHeight, MIN_CANVAS_HEIGHT);
+    const scaledGraphWidth = graphWidth * scale;
+    const scaledGraphHeight = graphHeight * scale;
+    const centeredOffsetX = Math.max((width - scaledGraphWidth) / 2, CANVAS_PADDING);
+    const centeredOffsetY = Math.max((height - scaledGraphHeight) / 2, CANVAS_PADDING * 0.75);
 
     canvas.width = width;
     canvas.height = height;
     canvas.style.width = "100%";
     canvas.style.height = `${height}px`;
     canvasOffset = {
-        x: CANVAS_PADDING - bounds.minX * scale,
-        y: CANVAS_PADDING - bounds.minY * scale,
+        x: centeredOffsetX - bounds.minX * scale,
+        y: centeredOffsetY - bounds.minY * scale,
         scale,
     };
 }
@@ -152,7 +164,12 @@ async function handleRouteSubmit(event) {
     }
 
     if (start === end) {
-        showError("Start and destination nodes must be different");
+        hideError();
+        const selfRoute = { distance: 0, path: [start] };
+        highlightedRoute = selfRoute;
+        setRoutePlaceholder(`Start and destination are the same node (${start}).`);
+        displayRouteResults(selfRoute);
+        renderScene();
         return;
     }
 
@@ -175,6 +192,7 @@ async function handleRouteSubmit(event) {
         }
 
         highlightedRoute = payload.data;
+        setRoutePlaceholder("");
         displayRouteResults(payload.data);
         renderScene();
     } catch (error) {
@@ -322,14 +340,27 @@ function drawHighlightedRoute(routeData) {
 // UI feedback
 
 function displayRouteResults(routeData) {
-    const resultsContainer = document.getElementById("results");
     const distanceValue = document.getElementById("distance-value");
     const pathValue = document.getElementById("path-value");
 
+    if (!routeData) {
+        distanceValue.textContent = "-";
+        pathValue.textContent = "-";
+        return;
+    }
+
     distanceValue.textContent = Number(routeData.distance).toLocaleString();
     pathValue.textContent = routeData.path.join(" → ");
+}
 
-    resultsContainer.classList.remove("hidden");
+function setRoutePlaceholder(message) {
+    const placeholder = document.getElementById("route-placeholder");
+    if (!placeholder) {
+        return;
+    }
+
+    placeholder.textContent = message;
+    placeholder.classList.toggle("hidden", !message);
 }
 
 function showLoading(visible) {
