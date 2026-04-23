@@ -12,9 +12,10 @@ const EDGE_WIDTH = 2;
 const PATH_COLOR = "#ff6b6b";
 const PATH_WIDTH = 4;
 const CANVAS_PADDING = 60;
-const MAX_CANVAS_WIDTH = 860;
+const MAX_CANVAS_WIDTH = 1120;
 const MAX_CANVAS_HEIGHT = 540;
 const MIN_CANVAS_HEIGHT = 320;
+const MIN_CANVAS_WIDTH = 260;
 const MAX_GRAPH_SCALE = 1.25;
 
 // Application bootstrap
@@ -112,25 +113,28 @@ function layoutCanvas() {
     const container = canvas.parentElement;
     const mainContent = document.querySelector(".main-content");
     const bounds = getGraphBounds(graphData.nodes);
-    const availableWidth = Math.min(container.clientWidth - 8, MAX_CANVAS_WIDTH);
+    const containerWidth = Math.floor(container.clientWidth - 8);
+    const availableWidth = Math.max(MIN_CANVAS_WIDTH, Math.min(containerWidth, MAX_CANVAS_WIDTH));
     const viewportHeight = Math.floor(window.visualViewport?.height || window.innerHeight);
+    const minCanvasHeight = Math.max(240, Math.min(MIN_CANVAS_HEIGHT, Math.floor(viewportHeight * 0.38)));
     const topOffset = Math.floor((mainContent || container).getBoundingClientRect().top);
-    const viewportAvailableHeight = Math.max(MIN_CANVAS_HEIGHT, viewportHeight - topOffset - 28);
-    const widthDrivenHeight = Math.max(MIN_CANVAS_HEIGHT, Math.floor(availableWidth * 0.62));
+    const viewportAvailableHeight = Math.max(minCanvasHeight, viewportHeight - topOffset - 28);
+    const widthDrivenHeight = Math.max(minCanvasHeight, Math.floor(availableWidth * 0.62));
     const availableHeight = Math.min(MAX_CANVAS_HEIGHT, viewportAvailableHeight, widthDrivenHeight);
+    const dynamicPadding = Math.max(28, Math.min(CANVAS_PADDING, Math.floor(availableWidth * 0.085)));
     const graphWidth = Math.max(bounds.maxX - bounds.minX, 1);
     const graphHeight = Math.max(bounds.maxY - bounds.minY, 1);
     const scale = Math.min(
-        (availableWidth - CANVAS_PADDING * 2) / graphWidth,
-        (availableHeight - CANVAS_PADDING * 2) / graphHeight,
+        (availableWidth - dynamicPadding * 2) / graphWidth,
+        (availableHeight - dynamicPadding * 2) / graphHeight,
         MAX_GRAPH_SCALE
     );
-    const width = Math.max(availableWidth, 640);
-    const height = Math.max(availableHeight, MIN_CANVAS_HEIGHT);
+    const width = availableWidth;
+    const height = Math.max(availableHeight, minCanvasHeight);
     const scaledGraphWidth = graphWidth * scale;
     const scaledGraphHeight = graphHeight * scale;
-    const centeredOffsetX = Math.max((width - scaledGraphWidth) / 2, CANVAS_PADDING);
-    const centeredOffsetY = Math.max((height - scaledGraphHeight) / 2, CANVAS_PADDING * 0.75);
+    const centeredOffsetX = Math.max((width - scaledGraphWidth) / 2, dynamicPadding);
+    const centeredOffsetY = Math.max((height - scaledGraphHeight) / 2, dynamicPadding * 0.75);
 
     canvas.width = width;
     canvas.height = height;
