@@ -5,7 +5,7 @@
 [![Frontend](https://img.shields.io/badge/Frontend-Vanilla%20JS%20%2B%20Canvas-2D6CDF?style=flat-square)]()
 [![License](https://img.shields.io/badge/License-Educational-lightgrey?style=flat-square)]()
 
-Web-based navigation demo that renders a weighted road network on an HTML5 canvas and computes the shortest route with Dijkstra's algorithm.
+This is a Web-based navigation demo that renders a weighted road network on an HTML5 canvas and computes the shortest route with Dijkstra's algorithm.
 
 ## Overview
 
