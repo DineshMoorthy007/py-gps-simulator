@@ -11,7 +11,7 @@ This is a Web-based navigation demo that renders a weighted road network on an H
 
 The application generates a connected graph of intersections, exposes it through a Flask API, and lets the browser draw the map and highlight the shortest route between any two nodes.
 
-## Stack
+## Tech Stack
 
 - Python 3.9+
 - Flask
@@ -105,7 +105,7 @@ Returns:
 }
 ```
 
-## Implementation Notes
+## Implementation Notes 
 
 - `graph.py` builds a reproducible force-directed graph with collision-aware node placement.
 - `algorithm.py` implements Dijkstra's algorithm and returns the route as a node list plus total distance.
